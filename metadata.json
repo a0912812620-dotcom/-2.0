@@ -1,0 +1,10 @@
+{
+  "name": "關懷2.0",
+  "description": "全方位守護長者健康的智能關懷平台，具有人臉表情偵測情緒關懷對話及貼心用藥鬧鐘提醒功能。",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
