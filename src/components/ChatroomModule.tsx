@@ -24,7 +24,7 @@ export default function ChatroomModule({ onBackToApp }: ChatroomModuleProps) {
     } else if (hours >= 11 && hours < 18) {
       timeGreeting = "午安";
     }
-    return `您好，${timeGreeting}，請問今天想跟我分享什麼事情呢😊`;
+    return `您好，${timeGreeting}，請問今天想分享什麼事情呢😊`;
   };
 
   // Initialize with proactive care message
