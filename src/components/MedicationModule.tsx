@@ -10,7 +10,11 @@ interface MedicationModuleProps {
 }
 
 export default function MedicationModule({ onAlarmTriggered, onStopAlarm, isAlarmRinging }: MedicationModuleProps) {
-  const [reminders, setReminders] = useState<MedicationReminder[]>([]);
+  // Purely in-memory medication reminders sequence - resets reliably on every page reload
+  const [reminders, setReminders] = useState<MedicationReminder[]>([
+    { id: 'rem_1', title: '日常綜合維他命', time: '08:30', isActive: true, isTriggered: false },
+    { id: 'rem_2', title: '血脂/血壓藥', time: '20:15', isActive: true, isTriggered: false },
+  ]);
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('');
   
@@ -18,26 +22,6 @@ export default function MedicationModule({ onAlarmTriggered, onStopAlarm, isAlar
   const [isMuted, setIsMuted] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const beepIntervalRef = useRef<any>(null);
-
-  // Read saved reminders on mount
-  useEffect(() => {
-    const cached = localStorage.getItem('care2_medication_reminders');
-    if (cached) {
-      try {
-        setReminders(JSON.parse(cached));
-      } catch (e) {
-        console.warn("Failed to parse cached reminders", e);
-      }
-    } else {
-      // Default placeholder reminders for seniors
-      const defaults: MedicationReminder[] = [
-        { id: 'rem_1', title: '日常綜合維他命', time: '08:30', isActive: true, isTriggered: false },
-        { id: 'rem_2', title: '血脂/血壓藥', time: '20:15', isActive: true, isTriggered: false },
-      ];
-      setReminders(defaults);
-      localStorage.setItem('care2_medication_reminders', JSON.stringify(defaults));
-    }
-  }, []);
 
   // Update clock every second & check for reminders
   useEffect(() => {
@@ -69,7 +53,6 @@ export default function MedicationModule({ onAlarmTriggered, onStopAlarm, isAlar
         });
 
         if (updated) {
-          localStorage.setItem('care2_medication_reminders', JSON.stringify(cleanedReminders));
           return cleanedReminders;
         }
         return prev;
@@ -180,7 +163,6 @@ export default function MedicationModule({ onAlarmTriggered, onStopAlarm, isAlar
 
     const nextReminders = [...reminders, newRem];
     setReminders(nextReminders);
-    localStorage.setItem('care2_medication_reminders', JSON.stringify(nextReminders));
 
     setTitle('');
     setTime('');
@@ -189,7 +171,6 @@ export default function MedicationModule({ onAlarmTriggered, onStopAlarm, isAlar
   const handleDeleteReminder = (id: string) => {
     const nextReminders = reminders.filter((r) => r.id !== id);
     setReminders(nextReminders);
-    localStorage.setItem('care2_medication_reminders', JSON.stringify(nextReminders));
   };
 
   const handleToggleReminder = (id: string) => {
@@ -200,7 +181,6 @@ export default function MedicationModule({ onAlarmTriggered, onStopAlarm, isAlar
       return r;
     });
     setReminders(nextReminders);
-    localStorage.setItem('care2_medication_reminders', JSON.stringify(nextReminders));
   };
 
   // Add a 5 sec countdown testing reminder

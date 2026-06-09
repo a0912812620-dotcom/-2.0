@@ -24,18 +24,13 @@ export default function App() {
   // Alarms ringing state
   const [ringingAlarmMsg, setRingingAlarmMsg] = useState<string | null>(null);
 
-  // Read saved profiles on mount
+  // No local storage persistence - always start clean on page refresh / shared link click
   useEffect(() => {
-    const cachedProfile = localStorage.getItem('care2_user_profile');
-    const cachedContact = localStorage.getItem('care2_user_contact');
-    if (cachedProfile && cachedContact) {
-      try {
-        setProfile(JSON.parse(cachedProfile));
-        setContact(JSON.parse(cachedContact));
-        setIsRegistered(true);
-      } catch (e) {
-        console.warn("Could not load registration cache", e);
-      }
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn("Storage clearing failed or not supported in this environment:", e);
     }
   }, []);
 
@@ -43,15 +38,10 @@ export default function App() {
     setProfile(profData);
     setContact(contData);
     setIsRegistered(true);
-    localStorage.setItem('care2_user_profile', JSON.stringify(profData));
-    localStorage.setItem('care2_user_contact', JSON.stringify(contData));
   };
 
   const handleClearRegistration = () => {
     if (window.confirm("確定要重設註冊資料並返回迎賓畫面嗎？")) {
-      localStorage.removeItem('care2_user_profile');
-      localStorage.removeItem('care2_user_contact');
-      localStorage.removeItem('care2_medication_reminders');
       setProfile(null);
       setContact(null);
       setIsRegistered(false);
