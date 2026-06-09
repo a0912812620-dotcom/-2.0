@@ -250,25 +250,43 @@ export default function App() {
             </div>
 
             {/* Emergency Contact Card */}
-            <div className="bg-[#f5f5f0] rounded-[32px] p-6 border border-[#5A5A40]/10">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <h3 className="text-xs uppercase tracking-widest text-[#8e8d82] font-bold">緊急聯絡人</h3>
+            <div className="bg-[#fff0f0] rounded-[32px] p-6 border border-red-200 shadow-sm" id="emergency-contact-panel">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2.5 h-2.5 bg-red-600 rounded-full animate-pulse"></div>
+                <h3 className="text-xs uppercase tracking-widest text-red-700 font-bold">緊急聯絡人通道</h3>
               </div>
-              <div className="space-y-3">
-                <p className="text-lg font-serif italic text-[#3d3d2e]">
-                  {contact?.contactName} <span className="text-sm font-sans opacity-60 not-italic text-[#8e8d82]">({contact?.relationship})</span>
+              <div className="space-y-4">
+                <p className="text-lg font-serif italic text-red-950 font-bold">
+                  {contact?.contactName} <span className="text-sm font-sans opacity-70 not-italic text-red-800">({contact?.relationship})</span>
                 </p>
-                <div className="flex items-center gap-3 text-[#5A5A40]">
-                  <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                  <a 
-                    href={`tel:${contact?.contactPhone}`}
-                    title="按此直接撥打電話"
-                    className="font-mono text-sm font-bold underline hover:text-[#4a4a35] transition-all"
-                  >
-                    {contact?.contactPhone}
-                  </a>
-                </div>
+                
+                <button
+                  type="button"
+                  id="direct-call-action-btn"
+                  onClick={() => {
+                    if (contact?.contactPhone) {
+                      try {
+                        // Multi-layer fallback to launch the system dialer even within sandbox configurations
+                        window.top!.location.href = `tel:${contact.contactPhone}`;
+                      } catch (e) {
+                        try {
+                          window.location.href = `tel:${contact.contactPhone}`;
+                        } catch (err) {
+                          window.open(`tel:${contact.contactPhone}`, '_top');
+                        }
+                      }
+                    }
+                  }}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-full flex items-center justify-center gap-2 transition-all text-xs cursor-pointer shadow-md active:scale-95"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <span>撥號電話：{contact?.contactPhone}</span>
+                </button>
+                <p className="text-[10px] text-red-500 text-center text-semibold leading-normal">
+                  * 點擊直接開啟親友通話熱線
+                </p>
               </div>
             </div>
 
