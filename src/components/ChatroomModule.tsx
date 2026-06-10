@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types';
-import { Send, Heart, RotateCcw, AlertTriangle, Loader2, Sparkles, Brain } from 'lucide-react';
+import { Send, Heart, RotateCcw, AlertTriangle, Loader2, Sparkles, Brain, Mic, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ChatroomModuleProps {
@@ -15,6 +15,78 @@ export default function ChatroomModule({ onBackToApp }: ChatroomModuleProps) {
   const [chatMode, setChatMode] = useState<'care' | 'gpt'>('care');
 
   const listEndRef = useRef<HTMLDivElement>(null);
+
+  // Speech-to-text / Voice Input states for elderly-friendly features
+  const [isListening, setIsListening] = useState(false);
+  const [recognitionError, setRecognitionError] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Initialize Speech Recognition Hook for Senior easy voice talking
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = 'zh-TW';
+
+      rec.onstart = () => {
+        setIsListening(true);
+        setRecognitionError(null);
+      };
+
+      rec.onresult = (event: any) => {
+        const resultText = event.results[0][0].transcript;
+        if (resultText) {
+          setInputValue((prev) => (prev ? prev + ' ' + resultText : resultText));
+        }
+      };
+
+      rec.onerror = (event: any) => {
+        console.error("Speech Recognition Error:", event.error);
+        if (event.error === 'not-allowed') {
+          setRecognitionError('麥克風權限已被拒絕。請開啟瀏覽器麥克風使用權限唷！👵🎤');
+        } else if (event.error === 'no-speech') {
+          // No big deal, just stop listening gracefully
+        } else {
+          setRecognitionError('語音感應不清晰，請稍微大聲且放慢速度再試一次喔！❤️');
+        }
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+      }
+    };
+  }, []);
+
+  const handleToggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("很抱歉，此瀏覽器或裝置不支援語音辨識輸入功能。建議您使用 Google Chrome 瀏覽器喔！👵💻");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      try {
+        setRecognitionError(null);
+        recognitionRef.current.start();
+      } catch (err) {
+        console.warn("Speech start failed:", err);
+      }
+    }
+  };
 
   // Determine early morning/afternoon/night greeting for Care Mode
   const getCareGreeting = () => {
@@ -428,22 +500,66 @@ export default function ChatroomModule({ onBackToApp }: ChatroomModuleProps) {
         </div>
       )}
 
+      {/* Real-time Voice Detection Hint Box */}
+      {isListening && (
+        <div className="mt-2 text-rose-600 font-bold text-xs flex items-center gap-1.5 animate-pulse px-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#D97706] inline-block animate-ping"></span>
+          <span className="bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl block w-full text-left">
+            👵 **貼心語音聆聽中**：請靠近麥克風直接說話唷！說完後可以再次點擊麥克風停止。
+          </span>
+        </div>
+      )}
+
+      {recognitionError && (
+        <div className="mt-2 text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs font-bold px-3 flex items-center justify-between shadow-sm">
+          <span className="flex items-center gap-1.5">
+            <span>⚠️ {recognitionError}</span>
+          </span>
+          <button 
+            type="button" 
+            onClick={() => setRecognitionError(null)} 
+            className="text-[10px] bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-bold px-2 py-0.5 rounded cursor-pointer transition"
+          >
+            我知道了
+          </button>
+        </div>
+      )}
+
       {/* Input Form */}
       <form onSubmit={handleSendMessage} className="mt-3 flex gap-2 border-t border-[#f5f5f0] pt-2">
+        {/* Senior-friendly Big Microphone Voice Button */}
+        <button
+          type="button"
+          onClick={handleToggleListening}
+          disabled={isTyping}
+          className={`w-11 h-11 rounded-full font-bold transition-all flex items-center justify-center cursor-pointer shrink-0 border duration-300 shadow-sm ${
+            isListening
+              ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse border-rose-400'
+              : 'bg-[#FAF7ED] hover:bg-[#F2EDD5] text-[#5A5A40] border-[#E5E4DE]'
+          }`}
+          title={isListening ? "停止錄音與辨識" : "點擊可以用聲音說話（長輩免打字鍵盤）"}
+        >
+          {isListening ? (
+            <MicOff size={18} className="animate-bounce text-white" />
+          ) : (
+            <Mic size={18} className="text-[#5A5A40] animate-pulse" />
+          )}
+        </button>
+
         <input
           type="text"
           id="chat-message-input"
-          placeholder={chatMode === 'care' ? "請對貼心秘書說點心情或日常..." : "請輸入要諮詢 GPT 的任何問題、科技設定或文章..."}
+          placeholder={chatMode === 'care' ? "請大聲用語音說話，或以此處輸入對話..." : "請用語音說話，或是輸入您想諮詢的百科問答..."}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           disabled={isTyping}
-          className="flex-1 px-4 py-2.5 bg-[#fdfcf8] border border-[#e5e4de] rounded-full focus:outline-none focus:border-[#5A5A40] focus:bg-white text-xs text-[#2c2c2c] transition-all font-sans"
+          className="flex-1 px-4 py-2.5 bg-[#fdfcf8] border border-[#e5e4de] rounded-full focus:outline-none focus:border-[#5A5A40] focus:bg-white text-sm text-[#2c2c2c] transition-all font-sans font-medium"
         />
         <button
           type="submit"
           id="chat-send-btn"
           disabled={!inputValue.trim() || isTyping}
-          className={`w-10 h-10 rounded-full font-bold transition-all flex items-center justify-center cursor-pointer shrink-0 ${
+          className={`w-11 h-11 rounded-full font-bold transition-all flex items-center justify-center cursor-pointer shrink-0 ${
             inputValue.trim() && !isTyping
               ? chatMode === 'care'
                 ? 'bg-[#5A5A40] hover:bg-[#4a4a35] text-white shadow-sm'
@@ -451,7 +567,7 @@ export default function ChatroomModule({ onBackToApp }: ChatroomModuleProps) {
               : 'bg-[#f5f5f0] text-[#8e8d82] border border-[#e5e4de] cursor-not-allowed'
           }`}
         >
-          <Send size={13} />
+          <Send size={15} />
         </button>
       </form>
     </div>
